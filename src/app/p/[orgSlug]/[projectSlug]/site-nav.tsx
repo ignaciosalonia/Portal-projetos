@@ -55,7 +55,7 @@ export function SiteNav({ items }: { items: NavItem[] }) {
     >
       <a
         href="#top"
-        className="font-serif text-[19px] uppercase tracking-[0.22em] text-brand-charcoal no-underline md:text-[22px]"
+        className="font-serif text-[24px] uppercase tracking-[0.18em] text-brand-charcoal no-underline md:text-[30px]"
       >
         Amanda Pioner
       </a>

@@ -83,7 +83,7 @@ export default async function ProjectPage({ params }: PageProps) {
               {location}
             </p>
           )}
-          <h1 className="my-7 font-serif text-[clamp(40px,7vw,96px)] font-normal leading-[0.84] tracking-[-0.04em]">
+          <h1 className="my-7 font-serif text-[clamp(34px,5.5vw,74px)] font-normal leading-[0.84] tracking-[-0.04em]">
             {project.name}
           </h1>
           <div className="mb-7 h-px w-[110px] bg-brand-camel" />
@@ -105,16 +105,16 @@ export default async function ProjectPage({ params }: PageProps) {
           id="apresentacao"
           className="scroll-mt-16 bg-brand-greige/15 px-[7vw] py-[120px]"
         >
-          <div className="mx-auto grid max-w-[1080px] items-center gap-[6vw] md:grid-cols-[1fr_1fr]">
+          <div className="mx-auto grid max-w-[900px] items-center gap-[6vw] md:grid-cols-[1fr_1fr]">
             <FadeInSection variant="slide-left">
               <p className="text-[10px] uppercase tracking-[0.25em] text-brand-camel">
                 Apresentação
               </p>
-              <h2 className="my-4 font-serif text-[clamp(28px,3.4vw,46px)] leading-[1.05] tracking-[-0.03em]">
+              <h2 className="my-4 font-serif text-[clamp(24px,2.7vw,36px)] leading-[1.05] tracking-[-0.03em]">
                 O projeto e<br />sua atmosfera.
               </h2>
               {project.description && (
-                <p className="max-w-[580px] whitespace-pre-line text-[14px] leading-[1.9] text-brand-sage">
+                <p className="max-w-[580px] whitespace-pre-line text-[13px] leading-[1.9] text-brand-sage">
                   {project.description}
                 </p>
               )}
@@ -148,7 +148,7 @@ export default async function ProjectPage({ params }: PageProps) {
           </div>
 
           {generalSpecs.length > 0 && (
-            <div className="mx-auto mt-12 max-w-[1080px]">
+            <div className="mx-auto mt-12 max-w-[900px]">
               <SpecificationsAccordion
                 items={generalSpecs}
                 label="Materiais e equipamentos gerais"
@@ -167,10 +167,10 @@ export default async function ProjectPage({ params }: PageProps) {
           <p className="text-[10px] uppercase tracking-[0.25em] text-brand-camel">
             Percurso pelo projeto
           </p>
-          <h2 className="my-5 max-w-[980px] font-serif text-[clamp(34px,5vw,68px)] leading-[0.92] tracking-[-0.03em]">
+          <h2 className="my-5 max-w-[980px] font-serif text-[clamp(28px,4vw,52px)] leading-[0.92] tracking-[-0.03em]">
             Ambiente a<br />ambiente.
           </h2>
-          <p className="max-w-[460px] text-[14px] leading-[1.8] text-brand-sage">
+          <p className="max-w-[460px] text-[13px] leading-[1.8] text-brand-sage">
             A sequência acompanha o percurso natural pelo espaço, das áreas
             comuns às mais reservadas.
           </p>
@@ -196,7 +196,7 @@ export default async function ProjectPage({ params }: PageProps) {
                   (alternate ? "bg-brand-greige/20" : "bg-brand-cream")
                 }
               >
-                <div className="mx-auto max-w-[1000px]">
+                <div className="mx-auto max-w-[820px]">
                   <div className="mb-9 grid grid-cols-[62px_1fr] items-end border-b border-brand-greige/50 pb-6 md:grid-cols-[88px_1fr]">
                     <span className="text-[11px] tracking-[0.18em] text-brand-camel">
                       {String(index + 1).padStart(2, "0")} /{" "}
@@ -208,7 +208,7 @@ export default async function ProjectPage({ params }: PageProps) {
                           {env.zone}
                         </p>
                       )}
-                      <h2 className="m-0 font-serif text-[clamp(24px,3vw,40px)] tracking-[-0.03em]">
+                      <h2 className="m-0 font-serif text-[clamp(20px,2.4vw,31px)] tracking-[-0.03em]">
                         {env.name}
                       </h2>
                     </div>
@@ -220,14 +220,14 @@ export default async function ProjectPage({ params }: PageProps) {
                     </p>
                   )}
 
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                     {envRenders.map((m) => (
                       <figure key={m.id} className="m-0 overflow-hidden">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={m.url}
                           alt={m.title ?? env.name}
-                          className="w-full transition-transform duration-[1200ms] ease-[cubic-bezier(0.2,0.75,0.2,1)] hover:scale-[1.015]"
+                          className="aspect-[4/3] w-full object-cover transition-transform duration-[1200ms] ease-[cubic-bezier(0.2,0.75,0.2,1)] hover:scale-[1.015]"
                         />
                       </figure>
                     ))}
@@ -253,13 +253,13 @@ export default async function ProjectPage({ params }: PageProps) {
                 <p className="text-[10px] uppercase tracking-[0.25em] text-brand-camel">
                   Desenhos técnicos
                 </p>
-                <h2 className="mt-4 font-serif text-[clamp(28px,3.6vw,50px)] leading-[1.05] tracking-[-0.03em]">
+                <h2 className="mt-4 font-serif text-[clamp(23px,2.9vw,39px)] leading-[1.05] tracking-[-0.03em]">
                   O projeto para
                   <br />
                   além da imagem.
                 </h2>
               </div>
-              <p className="max-w-[480px] text-[14px] leading-[1.8] text-brand-sage md:self-end">
+              <p className="max-w-[480px] text-[13px] leading-[1.8] text-brand-sage md:self-end">
                 O desenvolvimento visual é acompanhado por desenho técnico de
                 layout, cortes, carpintarias e iluminação.
               </p>
@@ -267,7 +267,7 @@ export default async function ProjectPage({ params }: PageProps) {
           </FadeInSection>
 
           <FadeInSection variant="fade">
-            <div className="mx-auto grid max-w-[1000px] grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="mx-auto grid max-w-[820px] grid-cols-1 gap-3 md:grid-cols-2">
               {[...floorPlans, ...documents].map((m, i, arr) => {
                 const href = m.fileUrl ?? m.url;
                 const label =
@@ -281,13 +281,13 @@ export default async function ProjectPage({ params }: PageProps) {
                     <img
                       src={m.url}
                       alt={label}
-                      className="h-[300px] w-full bg-brand-cream object-contain p-[18px]"
+                      className="h-[230px] w-full bg-brand-cream object-contain p-[16px]"
                     />
                     <div className="grid grid-cols-[70px_1fr_30px] items-center bg-brand-greige/40 px-5 py-[18px]">
                       <span className="text-[10px] tracking-[0.15em] text-brand-camel">
                         {m.code ?? ""}
                       </span>
-                      <b className="font-serif text-[17px] font-normal">
+                      <b className="font-serif text-[15px] font-normal">
                         {label}
                       </b>
                       <i className="not-italic text-brand-camel">↗</i>
@@ -323,7 +323,7 @@ export default async function ProjectPage({ params }: PageProps) {
                 <p className="text-[10px] uppercase tracking-[0.25em] text-brand-camel">
                   Percurso
                 </p>
-                <h2 className="mt-4 font-serif text-[clamp(28px,3.6vw,50px)] leading-[1.05] tracking-[-0.03em]">
+                <h2 className="mt-4 font-serif text-[clamp(23px,2.9vw,39px)] leading-[1.05] tracking-[-0.03em]">
                   O percurso até aqui
                   <br />e o que se segue.
                 </h2>
@@ -331,7 +331,7 @@ export default async function ProjectPage({ params }: PageProps) {
             </div>
           </FadeInSection>
 
-          <div className="mx-auto max-w-[1000px]">
+          <div className="mx-auto max-w-[820px]">
             {project.stages.map((stage) => {
               const isCurrent = stage.status === "current";
               const isDone = stage.status === "completed";
@@ -370,7 +370,7 @@ export default async function ProjectPage({ params }: PageProps) {
                           Fase atual
                         </small>
                       )}
-                      <b className="mb-2 block font-serif text-[19px] font-normal md:text-[21px]">
+                      <b className="mb-2 block font-serif text-[16px] font-normal md:text-[17px]">
                         {stage.name}
                       </b>
                       {stage.description && (
@@ -389,7 +389,7 @@ export default async function ProjectPage({ params }: PageProps) {
 
       {/* RODAPÉ */}
       <footer className="border-t border-brand-greige/40 px-[7vw] py-14 text-center">
-        <p className="font-serif text-[20px] uppercase tracking-[0.22em] text-brand-charcoal">
+        <p className="font-serif text-[26px] uppercase tracking-[0.2em] text-brand-charcoal">
           Amanda Pioner
         </p>
         <p className="mt-2 text-[10px] uppercase tracking-[0.2em] text-brand-sage">
