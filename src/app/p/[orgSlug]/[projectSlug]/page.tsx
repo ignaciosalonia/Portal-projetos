@@ -128,6 +128,8 @@ export default async function ProjectPage({ params }: PageProps) {
                   <img
                     src={moodboard[0].url}
                     alt={moodboard[0].title ?? "Moodboard"}
+                    loading="lazy"
+                    decoding="async"
                     className="w-full shadow-[0_18px_60px_rgba(51,35,25,0.08)]"
                   />
                   <figcaption className="mt-3 text-[10px] tracking-[0.08em] text-brand-sage">
@@ -141,6 +143,8 @@ export default async function ProjectPage({ params }: PageProps) {
                   <img
                     src={coverImage}
                     alt={project.name}
+                    loading="lazy"
+                    decoding="async"
                     className="w-full shadow-[0_18px_60px_rgba(51,35,25,0.08)]"
                   />
                 </figure>
@@ -227,7 +231,7 @@ export default async function ProjectPage({ params }: PageProps) {
                         <Lightbox
                           src={m.url}
                           alt={m.title ?? env.name}
-                          className="aspect-[4/3] w-full object-cover transition-transform duration-[1200ms] ease-[cubic-bezier(0.2,0.75,0.2,1)] hover:scale-[1.015]"
+                          className="aspect-[4/3] w-full object-cover md:transition-transform md:duration-[1200ms] md:ease-[cubic-bezier(0.2,0.75,0.2,1)] md:hover:scale-[1.015]"
                         />
                       </figure>
                     ))}
@@ -254,9 +258,9 @@ export default async function ProjectPage({ params }: PageProps) {
                   Desenhos técnicos
                 </p>
                 <h2 className="mt-4 font-serif text-[clamp(23px,2.9vw,39px)] leading-[1.05] tracking-[-0.03em]">
-                  O projeto para
+                  Os detalhes para
                   <br />
-                  além da imagem.
+                  além do render.
                 </h2>
               </div>
               <p className="max-w-[480px] text-[13px] leading-[1.8] text-brand-sage md:self-end">
@@ -281,6 +285,8 @@ export default async function ProjectPage({ params }: PageProps) {
                     <img
                       src={m.url}
                       alt={label}
+                      loading="lazy"
+                      decoding="async"
                       className="h-[230px] w-full bg-brand-cream object-contain p-[16px]"
                     />
                     <div className="grid grid-cols-[70px_1fr_30px] items-center bg-brand-greige/40 px-5 py-[18px]">
