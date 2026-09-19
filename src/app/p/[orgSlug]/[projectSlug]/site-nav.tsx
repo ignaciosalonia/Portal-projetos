@@ -47,7 +47,7 @@ export function SiteNav({ items }: { items: NavItem[] }) {
   return (
     <nav
       className={
-        "fixed inset-x-0 top-0 z-50 flex items-center justify-between px-[7vw] py-5 transition-colors duration-300 " +
+        "fixed inset-x-0 top-0 z-50 flex items-center justify-between gap-3 px-[7vw] py-4 transition-colors duration-300 md:py-5 " +
         (scrolled
           ? "bg-brand-cream/90 backdrop-blur-sm shadow-[0_1px_0_rgba(0,0,0,0.06)]"
           : "bg-transparent")
@@ -55,17 +55,17 @@ export function SiteNav({ items }: { items: NavItem[] }) {
     >
       <a
         href="#top"
-        className="font-serif text-[24px] uppercase tracking-[0.18em] text-brand-charcoal no-underline md:text-[30px]"
+        className="shrink-0 font-serif text-[18px] uppercase tracking-[0.14em] text-brand-charcoal no-underline sm:text-[22px] md:text-[30px] md:tracking-[0.18em]"
       >
         Amanda Pioner
       </a>
-      <ul className="hidden gap-7 md:flex">
+      <ul className="flex max-w-[58%] gap-4 overflow-x-auto md:max-w-none md:gap-7">
         {items.map((item) => (
           <li key={item.id}>
             <a
               href={`#${item.id}`}
               className={
-                "text-[10px] uppercase tracking-[0.2em] transition-opacity " +
+                "whitespace-nowrap text-[9px] uppercase tracking-[0.12em] transition-opacity md:text-[10px] md:tracking-[0.2em] " +
                 (activeId === item.id
                   ? "text-brand-charcoal opacity-100"
                   : "text-brand-sage opacity-80 hover:opacity-100")

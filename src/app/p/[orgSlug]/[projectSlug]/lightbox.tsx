@@ -1,7 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
+/**
+ * Abre a imagem em tela cheia por cima da página (sem nova aba). Necessário
+ * porque as imagens da galeria são recortadas em proporção fixa para manter
+ * a grade uniforme — o lightbox devolve a imagem inteira, sem corte.
+ */
 export function Lightbox({
   src,
   alt,
@@ -12,6 +17,22 @@ export function Lightbox({
   className?: string;
 }) {
   const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", onKey);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
 
   return (
     <>
@@ -29,14 +50,15 @@ export function Lightbox({
         <div
           role="dialog"
           aria-modal="true"
+          aria-label={alt}
           onClick={() => setOpen(false)}
-          className="fixed inset-0 z-[60] flex cursor-zoom-out items-center justify-center bg-brand-charcoal/95 p-6"
+          className="fixed inset-0 z-[60] flex cursor-zoom-out items-center justify-center bg-brand-charcoal/95 p-4 md:p-8"
         >
           <button
             type="button"
             onClick={() => setOpen(false)}
             aria-label="Fechar"
-            className="absolute right-6 top-6 text-2xl text-brand-cream"
+            className="absolute right-4 top-4 text-3xl leading-none text-brand-cream md:right-7 md:top-6"
           >
             ×
           </button>
@@ -44,7 +66,8 @@ export function Lightbox({
           <img
             src={src}
             alt={alt}
-            className="max-h-full max-w-full object-contain"
+            onClick={(e) => e.stopPropagation()}
+            className="max-h-full max-w-full cursor-default object-contain"
           />
         </div>
       )}

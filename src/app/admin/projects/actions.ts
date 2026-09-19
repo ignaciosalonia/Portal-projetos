@@ -74,6 +74,13 @@ export async function createProjectAction(
 const updateProjectGeneralSchema = z.object({
   projectId: z.string().uuid(),
   name: z.string().min(2),
+  slug: z
+    .string()
+    .min(2, "Endereço muito curto")
+    .regex(
+      /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+      "Use apenas letras minúsculas, números e hífens (ex.: apartamento-petropolis)",
+    ),
   subtitle: z.string().optional(),
   description: z.string().optional(),
   city: z.string().optional(),
@@ -89,6 +96,7 @@ export async function updateProjectGeneralAction(
   const parsed = updateProjectGeneralSchema.safeParse({
     projectId: formData.get("projectId"),
     name: formData.get("name"),
+    slug: slugify(String(formData.get("slug") ?? "")),
     subtitle: formData.get("subtitle") || undefined,
     description: formData.get("description") || undefined,
     city: formData.get("city") || undefined,
@@ -108,6 +116,7 @@ export async function updateProjectGeneralAction(
     .from("projects")
     .update({
       name: fields.name,
+      slug: fields.slug,
       subtitle: fields.subtitle ?? null,
       description: fields.description ?? null,
       city: fields.city ?? null,
@@ -117,9 +126,18 @@ export async function updateProjectGeneralAction(
     })
     .eq("id", projectId);
 
-  if (error) return { error: "Não foi possível salvar." };
+  if (error) {
+    // 23505 = unique_violation: já existe outro projeto com esse endereço.
+    if (error.code === "23505") {
+      return {
+        error: "Já existe um projeto com esse endereço. Escolha outro.",
+      };
+    }
+    return { error: "Não foi possível salvar." };
+  }
 
   revalidatePath(`/admin/projects/${projectId}`);
+  revalidatePath("/admin/projects");
   return { error: null };
 }
 

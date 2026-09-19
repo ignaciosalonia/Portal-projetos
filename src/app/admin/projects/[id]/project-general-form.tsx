@@ -27,6 +27,24 @@ export function ProjectGeneralForm({ project }: { project: Project }) {
       </label>
 
       <label className="col-span-2 text-sm">
+        Endereço do link público
+        <input
+          name="slug"
+          defaultValue={project.slug}
+          required
+          pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
+          className="mt-1 w-full rounded border px-3 py-2 font-mono text-sm"
+        />
+        <span className="mt-1 block text-xs text-neutral-500">
+          É o final do link que o cliente recebe:{" "}
+          <code>/p/.../{project.slug}</code>. Mudar o nome do projeto{" "}
+          <strong>não</strong> muda isso sozinho — assim um link já enviado
+          não para de funcionar. Se alterar aqui, o link anterior deixa de
+          funcionar.
+        </span>
+      </label>
+
+      <label className="col-span-2 text-sm">
         Subtítulo
         <input
           name="subtitle"

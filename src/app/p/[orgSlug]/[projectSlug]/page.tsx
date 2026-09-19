@@ -5,6 +5,7 @@ import type { Media } from "@/domain/types";
 import { FadeInSection } from "./fade-in-section";
 import { SpecificationsAccordion } from "./specifications-accordion";
 import { SiteNav } from "./site-nav";
+import { Lightbox } from "./lightbox";
 
 interface PageProps {
   params: Promise<{ orgSlug: string; projectSlug: string }>;
@@ -223,8 +224,7 @@ export default async function ProjectPage({ params }: PageProps) {
                   <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                     {envRenders.map((m) => (
                       <figure key={m.id} className="m-0 overflow-hidden">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
+                        <Lightbox
                           src={m.url}
                           alt={m.title ?? env.name}
                           className="aspect-[4/3] w-full object-cover transition-transform duration-[1200ms] ease-[cubic-bezier(0.2,0.75,0.2,1)] hover:scale-[1.015]"
@@ -340,9 +340,9 @@ export default async function ProjectPage({ params }: PageProps) {
                 <FadeInSection key={stage.id} variant="fade">
                   <article
                     className={
-                      "relative grid grid-cols-[62px_1fr] gap-6 md:grid-cols-[82px_1fr] " +
+                      "relative grid grid-cols-[46px_1fr] gap-4 md:grid-cols-[82px_1fr] md:gap-6 " +
                       (isCurrent
-                        ? "my-2 -ml-[30px] bg-brand-greige/40 px-[30px] py-8"
+                        ? "my-2 bg-brand-greige/40 px-5 py-7 md:-ml-[30px] md:px-[30px] md:py-8"
                         : "border-t border-brand-greige/50 py-6")
                     }
                   >
@@ -358,7 +358,7 @@ export default async function ProjectPage({ params }: PageProps) {
                     )}
                     <span
                       className={
-                        "font-serif text-[20px] " +
+                        "font-serif text-[22px] " +
                         (isCurrent ? "text-brand-camel" : "text-brand-sage")
                       }
                     >
@@ -366,15 +366,15 @@ export default async function ProjectPage({ params }: PageProps) {
                     </span>
                     <div>
                       {isCurrent && (
-                        <small className="mb-1 block text-[9px] uppercase tracking-[0.2em] text-brand-camel">
+                        <small className="mb-1 block text-[10px] uppercase tracking-[0.2em] text-brand-camel">
                           Fase atual
                         </small>
                       )}
-                      <b className="mb-2 block font-serif text-[16px] font-normal md:text-[17px]">
+                      <b className="mb-2 block font-serif text-[19px] font-normal md:text-[22px]">
                         {stage.name}
                       </b>
                       {stage.description && (
-                        <p className="m-0 max-w-[650px] text-[12px] leading-[1.7] text-brand-sage">
+                        <p className="m-0 max-w-[650px] text-[14px] leading-[1.75] text-brand-sage">
                           {stage.description}
                         </p>
                       )}
