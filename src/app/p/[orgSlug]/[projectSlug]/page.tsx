@@ -279,40 +279,60 @@ export default async function ProjectPage({ params }: PageProps) {
                   (m.type === "floor_plan" ? "Planta Baixa" : "Desenho técnico");
                 const isLast = i === arr.length - 1 && arr.length % 2 === 1;
 
-                const card = (
-                  <div className="bg-brand-greige/25">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={m.url}
-                      alt={label}
-                      loading="lazy"
-                      decoding="async"
-                      className="h-[230px] w-full bg-brand-cream object-contain p-[16px]"
-                    />
-                    <div className="grid grid-cols-[70px_1fr_30px] items-center bg-brand-greige/40 px-5 py-[18px]">
-                      <span className="text-[10px] tracking-[0.15em] text-brand-camel">
-                        {m.code ?? ""}
-                      </span>
-                      <b className="font-serif text-[15px] font-normal">
-                        {label}
-                      </b>
-                      <i className="not-italic text-brand-camel">↗</i>
-                    </div>
-                  </div>
-                );
+                // O Supabase devolve o arquivo com Content-Disposition de
+                // anexo quando a URL leva `?download` — sem isso o atributo
+                // `download` do HTML é ignorado por ser outra origem.
+                const downloadHref =
+                  href + (href.includes("?") ? "&" : "?") + "download";
 
                 return (
-                  <a
+                  <div
                     key={m.id}
-                    href={href}
-                    target="_blank"
-                    rel="noopener noreferrer"
                     className={
-                      "block no-underline " + (isLast ? "md:col-span-2" : "")
+                      "bg-brand-greige/25 " + (isLast ? "md:col-span-2" : "")
                     }
                   >
-                    {card}
-                  </a>
+                    <a
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block no-underline"
+                      aria-label={`Abrir ${label}`}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={m.url}
+                        alt={label}
+                        loading="lazy"
+                        decoding="async"
+                        className="h-[230px] w-full bg-brand-cream object-contain p-[16px]"
+                      />
+                    </a>
+
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 bg-brand-greige/40 px-5 py-[16px]">
+                      <span className="w-[62px] shrink-0 text-[10px] tracking-[0.15em] text-brand-camel">
+                        {m.code ?? ""}
+                      </span>
+                      <b className="flex-1 font-serif text-[15px] font-normal">
+                        {label}
+                      </b>
+                      <a
+                        href={href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[10px] uppercase tracking-[0.14em] text-brand-sage no-underline hover:text-brand-charcoal"
+                      >
+                        Abrir ↗
+                      </a>
+                      <a
+                        href={downloadHref}
+                        download
+                        className="rounded-full border border-brand-camel/60 px-3 py-1 text-[10px] uppercase tracking-[0.14em] text-brand-camel no-underline hover:bg-brand-camel/10"
+                      >
+                        Baixar
+                      </a>
+                    </div>
+                  </div>
                 );
               })}
             </div>
