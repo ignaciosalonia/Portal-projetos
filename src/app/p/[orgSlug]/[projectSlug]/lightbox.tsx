@@ -1,15 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 /**
  * Abre a imagem em tela cheia por cima da página (sem nova aba). Necessário
  * porque as imagens da galeria são recortadas em proporção fixa para manter
  * a grade uniforme — o lightbox devolve a imagem inteira, sem corte.
  *
- * O fundo é rolável: se a imagem não couber na tela (ou quando ampliada em
- * tamanho real), dá para percorrê-la com o scroll do mouse em vez de ficar
- * com parte dela inacessível.
+ * O overlay é renderizado via portal no <body>. Sem isso ele herdaria o
+ * contexto de empilhamento das seções animadas (que usam `transform`), e
+ * nesse caso `position: fixed` passa a se posicionar em relação à seção em
+ * vez da tela — era o que deixava a imagem deslocada, o fundo sem rolagem
+ * e o menu do topo por cima do overlay.
  */
 export function Lightbox({
   src,
@@ -44,6 +47,51 @@ export function Lightbox({
     };
   }, [open]);
 
+  const overlay = (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={alt}
+      onClick={close}
+      className="fixed inset-0 z-[100] overflow-auto overscroll-contain bg-brand-charcoal/95"
+    >
+      <div className="flex min-h-full w-full items-center justify-center p-4 md:p-8">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={src}
+          alt={alt}
+          onClick={(e) => {
+            e.stopPropagation();
+            setZoomed((z) => !z);
+          }}
+          className={
+            zoomed
+              ? "w-auto max-w-none cursor-zoom-out"
+              : "max-h-[85svh] max-w-full cursor-zoom-in object-contain"
+          }
+        />
+      </div>
+
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          close();
+        }}
+        aria-label="Fechar"
+        className="fixed right-3 top-3 z-[101] flex h-11 w-11 items-center justify-center rounded-full bg-brand-cream/90 text-2xl leading-none text-brand-charcoal shadow-lg md:right-6 md:top-6"
+      >
+        ×
+      </button>
+
+      <p className="pointer-events-none fixed inset-x-0 bottom-4 z-[101] text-center text-[10px] uppercase tracking-[0.2em] text-brand-cream/60">
+        {zoomed
+          ? "role para percorrer · clique na imagem para reduzir"
+          : "clique na imagem para ampliar · fora para fechar"}
+      </p>
+    </div>
+  );
+
   return (
     <>
       <button
@@ -62,50 +110,8 @@ export function Lightbox({
         />
       </button>
 
-      {open && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label={alt}
-          onClick={close}
-          className="fixed inset-0 z-[60] overflow-auto overscroll-contain bg-brand-charcoal/95"
-        >
-          {/* min-h-full mantém a imagem centrada quando cabe, e permite
-              rolagem quando ela é maior que a tela */}
-          <div className="flex min-h-full w-full items-center justify-center p-4 md:p-8">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={src}
-              alt={alt}
-              onClick={(e) => {
-                e.stopPropagation();
-                setZoomed((z) => !z);
-              }}
-              className={
-                zoomed
-                  ? "w-auto max-w-none cursor-zoom-out"
-                  : "max-h-[85svh] max-w-full cursor-zoom-in object-contain"
-              }
-            />
-          </div>
-
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              close();
-            }}
-            aria-label="Fechar"
-            className="fixed right-3 top-3 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-brand-cream/90 text-2xl leading-none text-brand-charcoal shadow-lg md:right-6 md:top-6"
-          >
-            ×
-          </button>
-
-          <p className="pointer-events-none fixed inset-x-0 bottom-4 text-center text-[10px] uppercase tracking-[0.2em] text-brand-cream/60">
-            {zoomed ? "role para percorrer · toque na imagem para reduzir" : "toque na imagem para ampliar · fora para fechar"}
-          </p>
-        </div>
-      )}
+      {/* `open` só vira true por clique, então document já existe aqui. */}
+      {open ? createPortal(overlay, document.body) : null}
     </>
   );
 }
