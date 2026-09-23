@@ -12,7 +12,15 @@ interface NavItem {
  * principais — padrão observado no material de referência (Senna
  * Building). Destaca a seção atualmente visível usando IntersectionObserver.
  */
-export function SiteNav({ items }: { items: NavItem[] }) {
+export function SiteNav({
+  items,
+  brandName,
+  logoUrl,
+}: {
+  items: NavItem[];
+  brandName: string;
+  logoUrl: string | null;
+}) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [scrolled, setScrolled] = useState(false);
 
@@ -53,11 +61,19 @@ export function SiteNav({ items }: { items: NavItem[] }) {
           : "bg-transparent")
       }
     >
-      <a
-        href="#top"
-        className="shrink-0 font-serif text-[18px] uppercase tracking-[0.14em] text-brand-charcoal no-underline sm:text-[22px] md:text-[30px] md:tracking-[0.18em]"
-      >
-        Amanda Pioner
+      <a href="#top" className="shrink-0 no-underline" aria-label={brandName}>
+        {logoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={logoUrl}
+            alt={brandName}
+            className="max-h-[34px] w-auto object-contain md:max-h-[44px]"
+          />
+        ) : (
+          <span className="font-serif text-[18px] uppercase tracking-[0.14em] text-brand-charcoal sm:text-[22px] md:text-[30px] md:tracking-[0.18em]">
+            {brandName}
+          </span>
+        )}
       </a>
       <ul className="flex max-w-[58%] gap-4 overflow-x-auto md:max-w-none md:gap-7">
         {items.map((item) => (

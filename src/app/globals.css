@@ -10,6 +10,11 @@
   --brand-sage: #767c71;
   --brand-camel: #ad997a;
   --brand-greige: #b7ada1;
+
+  /* Fontes padrão; cada organização sobrescreve na raiz do microsite
+     (ver src/lib/branding.ts). */
+  --brand-font-heading: "Playfair Display";
+  --brand-font-body: "DM Sans";
 }
 
 @theme inline {
@@ -20,8 +25,8 @@
   --color-brand-sage: var(--brand-sage);
   --color-brand-camel: var(--brand-camel);
   --color-brand-greige: var(--brand-greige);
-  --font-sans: "DM Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --font-serif: "Playfair Display", ui-serif, Georgia, serif;
+  --font-sans: var(--brand-font-body), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-serif: var(--brand-font-heading), ui-serif, Georgia, serif;
   --font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
 }
 

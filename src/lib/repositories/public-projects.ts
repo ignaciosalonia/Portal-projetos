@@ -27,6 +27,11 @@ function mapOrganization(row: Record<string, unknown>): Organization {
     primaryColor: (row.primary_color as string) ?? null,
     secondaryColor: (row.secondary_color as string) ?? null,
     accentColor: (row.accent_color as string) ?? null,
+    backgroundColor: (row.background_color as string) ?? null,
+    surfaceColor: (row.surface_color as string) ?? null,
+    fontPair: (row.font_pair as string) ?? "classico",
+    tagline: (row.tagline as string) ?? null,
+    showPoweredBy: (row.show_powered_by as boolean) ?? true,
     customDomain: (row.custom_domain as string) ?? null,
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
@@ -47,9 +52,17 @@ export async function getPublicOrganizationBySlug(
   return mapOrganization(data);
 }
 
-export async function getPublicProjectBySlug(
+/**
+ * Busca o projeto pelo token do endereço público.
+ *
+ * O slug sozinho não abre nada: ele é derivado do nome do projeto e,
+ * portanto, adivinhável. O token é o que autoriza — a RLS já filtra
+ * publicado/visível/ativo/dentro do prazo, e aqui casamos o token com a
+ * organização do endereço para que um link não sirva a outro escritório.
+ */
+export async function getPublicProjectByToken(
   organizationSlug: string,
-  projectSlug: string,
+  publicToken: string,
 ): Promise<ProjectWithRelations | null> {
   const supabase = await createClient();
 
@@ -60,9 +73,7 @@ export async function getPublicProjectBySlug(
     .from("projects")
     .select("*")
     .eq("organization_id", organization.id)
-    .eq("slug", projectSlug)
-    .eq("published", true)
-    .eq("public_visibility", true)
+    .eq("public_token", publicToken)
     .maybeSingle();
 
   if (error || !project) return null;
@@ -96,6 +107,7 @@ export async function getPublicProjectBySlug(
   ]);
 
   return {
+    organization,
     id: project.id,
     organizationId: project.organization_id,
     name: project.name,
@@ -115,6 +127,11 @@ export async function getPublicProjectBySlug(
     published: project.published,
     publicVisibility: project.public_visibility,
     seoIndexable: project.seo_indexable,
+    publicToken: project.public_token,
+    publicAccessEnabled: project.public_access_enabled ?? true,
+    publicAccessExpiresAt: project.public_access_expires_at ?? null,
+    publicOpenedCount: project.public_opened_count ?? 0,
+    publicLastOpenedAt: project.public_last_opened_at ?? null,
     createdAt: project.created_at,
     updatedAt: project.updated_at,
     stages: (stages ?? []).map(
@@ -177,4 +194,18 @@ export async function getPublicProjectBySlug(
       }),
     ),
   };
+}
+
+/**
+ * Registra uma abertura da página pública. Usa uma função do banco porque
+ * o visitante é anônimo e não tem permissão de escrita na tabela.
+ * Falha em silêncio: telemetria nunca deve impedir a página de abrir.
+ */
+export async function registerPublicView(publicToken: string): Promise<void> {
+  try {
+    const supabase = await createClient();
+    await supabase.rpc("register_public_view", { p_token: publicToken });
+  } catch {
+    // ignorado de propósito
+  }
 }

@@ -29,7 +29,7 @@ export default async function ProjectsPage() {
           <ProjectListItem
             key={project.id}
             project={project}
-            publicPath={`/p/${organization.slug}/${project.slug}`}
+            orgSlug={organization.slug}
           />
         ))}
       </ul>

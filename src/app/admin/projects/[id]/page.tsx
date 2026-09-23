@@ -18,7 +18,7 @@ import {
   TechnicalPanel,
 } from "./media-panel";
 import { SpecificationsPanel } from "./specifications-panel";
-import { PublicLinkBanner } from "./public-link-banner";
+import { PublicLinkPanel } from "./public-link-panel";
 import { ProjectTabs } from "./project-tabs";
 
 interface PageProps {
@@ -43,11 +43,6 @@ export default async function ProjectDetailPage({ params }: PageProps) {
   const organization = memberships.find(
     (m) => m.organizationId === project.organizationId,
   )?.organization;
-  const publicPath = organization
-    ? `/p/${organization.slug}/${project.slug}`
-    : "";
-  const isLive = project.published && project.publicVisibility;
-
   const generalSpecs = specificationItems.filter((s) => !s.environmentId);
 
   return (
@@ -62,7 +57,9 @@ export default async function ProjectDetailPage({ params }: PageProps) {
         <h1 className="text-2xl font-light">{project.name}</h1>
       </div>
 
-      <PublicLinkBanner publicPath={publicPath} isLive={isLive} />
+      {organization && (
+        <PublicLinkPanel project={project} orgSlug={organization.slug} />
+      )}
 
       <ProjectTabs
         panels={{

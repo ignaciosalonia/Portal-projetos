@@ -303,3 +303,54 @@ export async function deleteProjectAction(projectId: string) {
   if (error) throw new Error("Não foi possível excluir o projeto.");
   revalidatePath("/admin/projects");
 }
+
+// ---------------------------------------------------------------------------
+// Controle do link público
+// ---------------------------------------------------------------------------
+
+/** Liga/desliga o link sem alterar o estado de publicação do projeto. */
+export async function setPublicAccessEnabledAction(
+  projectId: string,
+  enabled: boolean,
+) {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("projects")
+    .update({ public_access_enabled: enabled })
+    .eq("id", projectId);
+
+  if (error) throw new Error("Não foi possível alterar o acesso.");
+  revalidatePath(`/admin/projects/${projectId}`);
+  revalidatePath("/admin/projects");
+}
+
+/** Define ou remove o prazo de validade do link. */
+export async function setPublicAccessExpiryAction(
+  projectId: string,
+  isoDate: string | null,
+) {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("projects")
+    .update({ public_access_expires_at: isoDate })
+    .eq("id", projectId);
+
+  if (error) throw new Error("Não foi possível alterar o prazo.");
+  revalidatePath(`/admin/projects/${projectId}`);
+}
+
+/**
+ * Gera um endereço novo e invalida o anterior na hora. Usado quando o link
+ * foi encaminhado para quem não devia. O token vem do banco (gen_random_bytes),
+ * não do cliente.
+ */
+export async function regeneratePublicTokenAction(projectId: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("regenerate_public_token", {
+    p_project_id: projectId,
+  });
+
+  if (error) throw new Error("Não foi possível gerar um link novo.");
+  revalidatePath(`/admin/projects/${projectId}`);
+  revalidatePath("/admin/projects");
+}

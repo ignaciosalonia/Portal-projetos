@@ -29,6 +29,11 @@ export interface Organization {
   primaryColor: string | null;
   secondaryColor: string | null;
   accentColor: string | null;
+  backgroundColor: string | null;
+  surfaceColor: string | null;
+  fontPair: string;
+  tagline: string | null;
+  showPoweredBy: boolean;
   customDomain: string | null;
   createdAt: string;
   updatedAt: string;
@@ -62,6 +67,11 @@ export interface Project {
   published: boolean;
   publicVisibility: boolean;
   seoIndexable: boolean;
+  publicToken: string;
+  publicAccessEnabled: boolean;
+  publicAccessExpiresAt: string | null;
+  publicOpenedCount: number;
+  publicLastOpenedAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -123,6 +133,7 @@ export interface SpecificationItem {
 
 /** Projeto com relações carregadas — usado nas páginas públicas e no admin. */
 export interface ProjectWithRelations extends Project {
+  organization: Organization;
   stages: ProjectStage[];
   environments: Environment[];
   media: Media[];

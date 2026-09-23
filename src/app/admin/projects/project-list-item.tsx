@@ -7,16 +7,24 @@ import { deleteProjectAction } from "./actions";
 
 export function ProjectListItem({
   project,
-  publicPath,
+  orgSlug,
 }: {
   project: Project;
-  publicPath: string;
+  orgSlug: string;
 }) {
+  const publicPath = `/p/${orgSlug}/${project.slug}/${project.publicToken}`;
   const [isPending, startTransition] = useTransition();
   const [confirming, setConfirming] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const isLive = project.published && project.publicVisibility;
+  const expired =
+    project.publicAccessExpiresAt !== null &&
+    new Date(project.publicAccessExpiresAt) <= new Date();
+  const isLive =
+    project.published &&
+    project.publicVisibility &&
+    project.publicAccessEnabled &&
+    !expired;
 
   function handleCopy() {
     const url = `${window.location.origin}${publicPath}`;

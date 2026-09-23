@@ -58,9 +58,14 @@ export default async function AdminLayout({
       <header className="flex items-center justify-between border-b bg-white px-6 py-4">
         <div>
           <p className="text-sm text-neutral-500">{currentOrg.name}</p>
-          <Link href="/admin/projects" className="font-medium">
-            Projetos
-          </Link>
+          <nav className="flex gap-4">
+            <Link href="/admin/projects" className="font-medium">
+              Projetos
+            </Link>
+            <Link href="/admin/marca" className="font-medium text-neutral-500">
+              Identidade visual
+            </Link>
+          </nav>
         </div>
         <form action={signOutAction}>
           <button type="submit" className="text-sm text-neutral-500 underline">
