@@ -111,6 +111,70 @@ export async function uploadMediaAction(
   return { error: null };
 }
 
+const registerMediaSchema = z.object({
+  projectId: z.string().uuid(),
+  environmentId: z.string().uuid().optional(),
+  type: uploadMediaSchema.shape.type,
+  path: z.string().min(3),
+  isPdf: z.boolean(),
+  code: z.string().optional(),
+  title: z.string().optional(),
+});
+
+/**
+ * Registra no banco um arquivo que o navegador já enviou direto ao Storage.
+ *
+ * O envio não passa mais pelo servidor: Server Actions têm limite de 1 MB e a
+ * Vercel tem teto fixo de 4,5 MB por requisição, e um render costuma ter de
+ * 3 a 15 MB. Aqui chega só o caminho do arquivo.
+ *
+ * A URL é montada no servidor a partir do caminho (não confiamos em URL vinda
+ * do navegador), e o caminho precisa estar na pasta do próprio projeto. A RLS
+ * de `media` garante que o projeto é de uma organização do usuário.
+ */
+export async function registerMediaAction(
+  input: z.infer<typeof registerMediaSchema>,
+): Promise<FormActionState> {
+  const parsed = registerMediaSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Dados inválidos." };
+  }
+  const d = parsed.data;
+  if (!d.path.startsWith(`${d.projectId}/`) || d.path.includes("..")) {
+    return { error: "Caminho de arquivo inválido." };
+  }
+
+  const supabase = await createClient();
+  const { data: publicUrlData } = supabase.storage
+    .from(MEDIA_BUCKET)
+    .getPublicUrl(d.path);
+
+  const { count } = await supabase
+    .from("media")
+    .select("*", { count: "exact", head: true })
+    .eq("project_id", d.projectId);
+
+  const { error } = await supabase.from("media").insert({
+    project_id: d.projectId,
+    environment_id: d.environmentId ?? null,
+    type: d.type,
+    url: publicUrlData.publicUrl,
+    file_url: d.isPdf ? publicUrlData.publicUrl : null,
+    code: d.code ?? null,
+    title: d.title ?? null,
+    order_index: (count ?? 0) + 1,
+  });
+
+  if (error) {
+    // Não deixa arquivo órfão no Storage se o registro falhar.
+    await supabase.storage.from(MEDIA_BUCKET).remove([d.path]);
+    return { error: "Não foi possível salvar o registro do arquivo." };
+  }
+
+  revalidatePath(`/admin/projects/${d.projectId}`);
+  return { error: null };
+}
+
 export async function deleteMediaAction(mediaId: string, projectId: string) {
   const supabase = await createClient();
   const { error } = await supabase.from("media").delete().eq("id", mediaId);

@@ -1,15 +1,16 @@
 "use client";
 
-import { useActionState, useTransition } from "react";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { createClient as createBrowserSupabase } from "@/lib/supabase/client";
 import type { Environment, Media, MediaType } from "@/domain/types";
 import {
   deleteMediaAction,
+  registerMediaAction,
   setHeroImageAction,
-  uploadMediaAction,
-  type FormActionState,
 } from "./media-actions";
 
-const initialState: FormActionState = { error: null };
+const MEDIA_BUCKET = "project-media";
 
 /** Moodboard — aparece ao lado do texto de conceito, no topo do site. */
 export function MoodboardPanel({
@@ -144,6 +145,21 @@ function PanelShell({
   );
 }
 
+function slugifyFilename(name: string): string {
+  const base = name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9.]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+  return `${crypto.randomUUID()}-${base || "arquivo"}`;
+}
+
+/**
+ * Envio de arquivos direto do navegador para o Storage, sem passar pelo
+ * servidor (que limita a 1 MB por requisição). Aceita vários arquivos de uma
+ * vez e envia um por um, mostrando o progresso.
+ */
 function UploadForm({
   projectId,
   environmentId,
@@ -157,22 +173,76 @@ function UploadForm({
   withDrawingFields?: boolean;
   acceptPdf?: boolean;
 }) {
-  const [state, formAction, pending] = useActionState(
-    uploadMediaAction,
-    initialState,
-  );
+  const router = useRouter();
+  const [type, setType] = useState<MediaType>(typeOptions[0].value);
+  const [code, setCode] = useState("");
+  const [title, setTitle] = useState("");
+  const [files, setFiles] = useState<File[]>([]);
+  const [progress, setProgress] = useState<string | null>(null);
+  const [errors, setErrors] = useState<string[]>([]);
+  const [inputKey, setInputKey] = useState(0);
+
+  // Código e título descrevem UMA prancha: com vários arquivos, ficam em branco.
+  const multiple = !withDrawingFields;
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (files.length === 0) return;
+
+    const supabase = createBrowserSupabase();
+    const failed: string[] = [];
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      setProgress(
+        files.length > 1
+          ? `Enviando ${i + 1} de ${files.length}...`
+          : "Enviando...",
+      );
+
+      const path = `${projectId}/${slugifyFilename(file.name)}`;
+      const { error: upErr } = await supabase.storage
+        .from(MEDIA_BUCKET)
+        .upload(path, file, { contentType: file.type, upsert: false });
+
+      if (upErr) {
+        failed.push(`${file.name}: ${upErr.message}`);
+        continue;
+      }
+
+      const result = await registerMediaAction({
+        projectId,
+        environmentId,
+        type,
+        path,
+        isPdf: file.type === "application/pdf",
+        code: code || undefined,
+        title: title || undefined,
+      });
+      if (result.error) failed.push(`${file.name}: ${result.error}`);
+    }
+
+    setErrors(failed);
+    setProgress(null);
+    setFiles([]);
+    setCode("");
+    setTitle("");
+    setInputKey((k) => k + 1);
+    router.refresh();
+  }
+
+  const pending = progress !== null;
 
   return (
-    <form action={formAction} className="flex flex-wrap items-end gap-2">
-      <input type="hidden" name="projectId" value={projectId} />
-      {environmentId && (
-        <input type="hidden" name="environmentId" value={environmentId} />
-      )}
-
-      {typeOptions.length > 1 ? (
+    <form onSubmit={handleSubmit} className="flex flex-wrap items-end gap-2">
+      {typeOptions.length > 1 && (
         <div>
           <label className="block text-xs text-neutral-500">Tipo</label>
-          <select name="type" className="rounded border px-2 py-2 text-sm">
+          <select
+            value={type}
+            onChange={(e) => setType(e.target.value as MediaType)}
+            className="rounded border px-2 py-2 text-sm"
+          >
             {typeOptions.map((opt) => (
               <option key={opt.value} value={opt.value}>
                 {opt.label}
@@ -180,8 +250,6 @@ function UploadForm({
             ))}
           </select>
         </div>
-      ) : (
-        <input type="hidden" name="type" value={typeOptions[0].value} />
       )}
 
       {withDrawingFields && (
@@ -189,7 +257,8 @@ function UploadForm({
           <div className="w-28">
             <label className="block text-xs text-neutral-500">Código</label>
             <input
-              name="code"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
               placeholder="ARQ-03"
               className="w-full rounded border px-2 py-2 text-sm"
             />
@@ -197,7 +266,8 @@ function UploadForm({
           <div className="min-w-[160px] flex-1">
             <label className="block text-xs text-neutral-500">Título</label>
             <input
-              name="title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
               placeholder="Estudo de Layout"
               className="w-full rounded border px-2 py-2 text-sm"
             />
@@ -206,25 +276,36 @@ function UploadForm({
       )}
 
       <div>
-        <label className="block text-xs text-neutral-500">Arquivo</label>
+        <label className="block text-xs text-neutral-500">
+          {multiple ? "Arquivos (pode selecionar vários)" : "Arquivo"}
+        </label>
         <input
+          key={inputKey}
           type="file"
-          name="file"
+          multiple={multiple}
           accept={acceptPdf ? "image/*,application/pdf" : "image/*"}
           required
+          disabled={pending}
+          onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
           className="text-sm"
         />
       </div>
 
       <button
         type="submit"
-        disabled={pending}
+        disabled={pending || files.length === 0}
         className="rounded bg-neutral-900 px-3 py-2 text-sm text-white disabled:opacity-50"
       >
-        {pending ? "Enviando..." : "Enviar"}
+        {progress ??
+          (files.length > 1 ? `Enviar ${files.length} arquivos` : "Enviar")}
       </button>
-      {state.error && (
-        <p className="w-full text-sm text-red-600">{state.error}</p>
+
+      {errors.length > 0 && (
+        <div className="w-full text-sm text-red-600">
+          {errors.map((err) => (
+            <p key={err}>{err}</p>
+          ))}
+        </div>
       )}
     </form>
   );

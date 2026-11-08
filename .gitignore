@@ -1,0 +1,16 @@
+# dependências
+/node_modules
+# build do Next.js
+/.next/
+/out/
+/build
+# variáveis de ambiente (chaves): nunca vão para o repositório
+.env*
+!.env.example
+# Vercel
+.vercel
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+# sistema
+.DS_Store
