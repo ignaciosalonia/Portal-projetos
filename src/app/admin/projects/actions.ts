@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { ALL_SECTION_TEXT_KEYS } from "@/domain/section-texts";
 
 function slugify(input: string): string {
   return input
@@ -82,7 +83,6 @@ const updateProjectGeneralSchema = z.object({
       "Use apenas letras minúsculas, números e hífens (ex.: apartamento-petropolis)",
     ),
   subtitle: z.string().optional(),
-  description: z.string().optional(),
   city: z.string().optional(),
   state: z.string().optional(),
   country: z.string().optional(),
@@ -98,7 +98,6 @@ export async function updateProjectGeneralAction(
     name: formData.get("name"),
     slug: slugify(String(formData.get("slug") ?? "")),
     subtitle: formData.get("subtitle") || undefined,
-    description: formData.get("description") || undefined,
     city: formData.get("city") || undefined,
     state: formData.get("state") || undefined,
     country: formData.get("country") || undefined,
@@ -118,7 +117,6 @@ export async function updateProjectGeneralAction(
       name: fields.name,
       slug: fields.slug,
       subtitle: fields.subtitle ?? null,
-      description: fields.description ?? null,
       city: fields.city ?? null,
       state: fields.state ?? null,
       country: fields.country ?? null,
@@ -353,4 +351,54 @@ export async function regeneratePublicTokenAction(projectId: string) {
   if (error) throw new Error("Não foi possível gerar um link novo.");
   revalidatePath(`/admin/projects/${projectId}`);
   revalidatePath("/admin/projects");
+}
+
+// ---------------------------------------------------------------------------
+// Textos editáveis do microsite
+// ---------------------------------------------------------------------------
+
+/**
+ * Salva os textos de uma seção do microsite (rótulos, títulos, textos) e, no
+ * bloco de apresentação, também o texto do conceito e a imagem escolhida.
+ *
+ * Só aceita chaves conhecidas (ver src/domain/section-texts.ts) e mescla com o
+ * que já está salvo, para uma aba não apagar os textos das outras.
+ */
+export async function updateSectionTextsAction(input: {
+  projectId: string;
+  texts: Record<string, string>;
+  description?: string;
+}): Promise<FormActionState> {
+  const projectId = z.string().uuid().safeParse(input.projectId);
+  if (!projectId.success) return { error: "Projeto inválido." };
+
+  const clean: Record<string, string> = {};
+  for (const [key, value] of Object.entries(input.texts)) {
+    if (!ALL_SECTION_TEXT_KEYS.has(key)) continue;
+    clean[key] = String(value).slice(0, 2000);
+  }
+
+  const supabase = await createClient();
+  const { data: current, error: readError } = await supabase
+    .from("projects")
+    .select("section_texts")
+    .eq("id", projectId.data)
+    .single();
+  if (readError || !current) return { error: "Projeto não encontrado." };
+
+  const payload: Record<string, unknown> = {
+    section_texts: { ...(current.section_texts ?? {}), ...clean },
+  };
+  if (input.description !== undefined) {
+    payload.description = input.description.trim() || null;
+  }
+
+  const { error } = await supabase
+    .from("projects")
+    .update(payload)
+    .eq("id", projectId.data);
+  if (error) return { error: "Não foi possível salvar os textos." };
+
+  revalidatePath(`/admin/projects/${projectId.data}`);
+  return { error: null };
 }

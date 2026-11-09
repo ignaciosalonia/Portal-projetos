@@ -72,6 +72,7 @@ export interface Project {
   publicAccessExpiresAt: string | null;
   publicOpenedCount: number;
   publicLastOpenedAt: string | null;
+  sectionTexts: Record<string, string>;
   createdAt: string;
   updatedAt: string;
 }

@@ -53,16 +53,6 @@ export function ProjectGeneralForm({ project }: { project: Project }) {
         />
       </label>
 
-      <label className="col-span-2 text-sm">
-        Descrição
-        <textarea
-          name="description"
-          defaultValue={project.description ?? ""}
-          rows={4}
-          className="mt-1 w-full rounded border px-3 py-2 text-sm"
-        />
-      </label>
-
       <label className="text-sm">
         Cidade
         <input

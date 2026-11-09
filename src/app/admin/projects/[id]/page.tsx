@@ -20,6 +20,7 @@ import {
 import { SpecificationsPanel } from "./specifications-panel";
 import { PublicLinkPanel } from "./public-link-panel";
 import { ProjectTabs } from "./project-tabs";
+import { SectionTextsPanel } from "./section-texts-panel";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -63,9 +64,25 @@ export default async function ProjectDetailPage({ params }: PageProps) {
 
       <ProjectTabs
         panels={{
-          geral: <ProjectGeneralForm project={project} />,
+          geral: (
+            <div className="space-y-6">
+              <ProjectGeneralForm project={project} />
+              <SectionTextsPanel
+                projectId={project.id}
+                group="capa"
+                texts={project.sectionTexts}
+              />
+            </div>
+          ),
           apresentacao: (
             <div className="space-y-6">
+              <SectionTextsPanel
+                projectId={project.id}
+                group="apresentacao"
+                texts={project.sectionTexts}
+                description={project.description}
+                images={media}
+              />
               <MoodboardPanel
                 projectId={project.id}
                 media={media}
@@ -82,6 +99,11 @@ export default async function ProjectDetailPage({ params }: PageProps) {
           ),
           ambientes: (
             <div className="space-y-6">
+              <SectionTextsPanel
+                projectId={project.id}
+                group="ambientes"
+                texts={project.sectionTexts}
+              />
               <EnvironmentsPanel
                 projectId={project.id}
                 environments={environments}
@@ -102,13 +124,29 @@ export default async function ProjectDetailPage({ params }: PageProps) {
             </div>
           ),
           tecnico: (
-            <TechnicalPanel
-              projectId={project.id}
-              media={media}
-              heroImage={project.heroImage}
-            />
+            <div className="space-y-6">
+              <SectionTextsPanel
+                projectId={project.id}
+                group="tecnico"
+                texts={project.sectionTexts}
+              />
+              <TechnicalPanel
+                projectId={project.id}
+                media={media}
+                heroImage={project.heroImage}
+              />
+            </div>
           ),
-          percurso: <StagesPanel projectId={project.id} stages={stages} />,
+          percurso: (
+            <div className="space-y-6">
+              <SectionTextsPanel
+                projectId={project.id}
+                group="percurso"
+                texts={project.sectionTexts}
+              />
+              <StagesPanel projectId={project.id} stages={stages} />
+            </div>
+          ),
           publicacao: <PublicationPanel project={project} />,
         }}
       />

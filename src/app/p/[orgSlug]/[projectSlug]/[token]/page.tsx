@@ -10,6 +10,10 @@ import type { Media } from "@/domain/types";
 import { FadeInSection } from "../fade-in-section";
 import { SpecificationsAccordion } from "../specifications-accordion";
 import { SiteNav } from "../site-nav";
+import {
+  APRESENTACAO_IMAGEM_KEY,
+  sectionText,
+} from "@/domain/section-texts";
 import { Lightbox } from "../lightbox";
 
 interface PageProps {
@@ -63,6 +67,31 @@ export default async function ProjectPage({ params }: PageProps) {
     renders[0]?.url ??
     project.media.find((m) => m.type === "photo")?.url ??
     null;
+
+  // Textos editáveis: o salvo no projeto ou o padrão.
+  const t = (key: string) => sectionText(project.sectionTexts, key);
+
+  // Imagem do bloco de apresentação: a escolhida no painel, senão o primeiro
+  // moodboard, senão a capa.
+  const chosenId = project.sectionTexts?.[APRESENTACAO_IMAGEM_KEY];
+  const chosen = chosenId
+    ? project.media.find((m) => m.id === chosenId && !m.fileUrl)
+    : undefined;
+  const apresentacaoImg = chosen
+    ? { url: chosen.url, alt: chosen.title ?? project.name, isMoodboard: chosen.type === "moodboard" }
+    : moodboard[0]
+      ? { url: moodboard[0].url, alt: moodboard[0].title ?? "Moodboard", isMoodboard: true }
+      : coverImage
+        ? { url: coverImage, alt: project.name, isMoodboard: false }
+        : null;
+  // A legenda padrão fala de moodboard: só aparece sozinha se a imagem for um.
+  const legendaSalva = project.sectionTexts?.apresentacao_legenda;
+  const apresentacaoLegenda =
+    legendaSalva !== undefined
+      ? legendaSalva
+      : apresentacaoImg?.isMoodboard
+        ? t("apresentacao_legenda")
+        : "";
 
   const environmentsWithRenders = project.environments.filter((env) =>
     renders.some((m) => m.environmentId === env.id),
@@ -118,24 +147,28 @@ export default async function ProjectPage({ params }: PageProps) {
         </div>
 
         <p className="absolute bottom-8 right-[4.5vw] text-[9px] uppercase tracking-[0.18em] text-brand-sage">
-          deslize para explorar <span className="ml-2">↓</span>
+          {t("capa_dica")} <span className="ml-2">↓</span>
         </p>
       </section>
 
       {/* APRESENTAÇÃO — conceito + moodboard lado a lado */}
-      {(project.description || moodboard.length > 0 || coverImage) && (
+      {(project.description || apresentacaoImg) && (
         <section
           id="apresentacao"
           className="scroll-mt-16 bg-brand-greige/15 px-[7vw] py-[120px]"
         >
           <div className="mx-auto grid max-w-[900px] items-center gap-[6vw] md:grid-cols-[1fr_1fr]">
             <FadeInSection variant="slide-left">
-              <p className="text-[10px] uppercase tracking-[0.25em] text-brand-camel">
-                Apresentação
-              </p>
-              <h2 className="my-4 font-serif text-[clamp(24px,2.7vw,36px)] leading-[1.05] tracking-[-0.03em]">
-                O projeto e<br />sua atmosfera.
-              </h2>
+              {t("apresentacao_rotulo") && (
+                <p className="text-[10px] uppercase tracking-[0.25em] text-brand-camel">
+                  {t("apresentacao_rotulo")}
+                </p>
+              )}
+              {t("apresentacao_titulo") && (
+                <h2 className="my-4 whitespace-pre-line font-serif text-[clamp(24px,2.7vw,36px)] leading-[1.05] tracking-[-0.03em]">
+                  {t("apresentacao_titulo")}
+                </h2>
+              )}
               {project.description && (
                 <p className="max-w-[580px] whitespace-pre-line text-[13px] leading-[1.9] text-brand-sage">
                   {project.description}
@@ -144,33 +177,23 @@ export default async function ProjectPage({ params }: PageProps) {
             </FadeInSection>
 
             <FadeInSection variant="zoom">
-              {moodboard.length > 0 ? (
+              {apresentacaoImg && (
                 <figure className="m-0">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={moodboard[0].url}
-                    alt={moodboard[0].title ?? "Moodboard"}
+                    src={apresentacaoImg.url}
+                    alt={apresentacaoImg.alt}
                     loading="lazy"
                     decoding="async"
                     className="w-full shadow-[0_18px_60px_rgba(51,35,25,0.08)]"
                   />
-                  <figcaption className="mt-3 text-[10px] tracking-[0.08em] text-brand-sage">
-                    {moodboard[0].description ??
-                      "Moodboard · linguagem material e cromática do projeto"}
-                  </figcaption>
+                  {apresentacaoLegenda && (
+                    <figcaption className="mt-3 text-[10px] tracking-[0.08em] text-brand-sage">
+                      {apresentacaoLegenda}
+                    </figcaption>
+                  )}
                 </figure>
-              ) : coverImage ? (
-                <figure className="m-0">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={coverImage}
-                    alt={project.name}
-                    loading="lazy"
-                    decoding="async"
-                    className="w-full shadow-[0_18px_60px_rgba(51,35,25,0.08)]"
-                  />
-                </figure>
-              ) : null}
+              )}
             </FadeInSection>
           </div>
 
@@ -178,7 +201,7 @@ export default async function ProjectPage({ params }: PageProps) {
             <div className="mx-auto mt-12 max-w-[900px]">
               <SpecificationsAccordion
                 items={generalSpecs}
-                label="Materiais e equipamentos gerais"
+                label={t("materiais_gerais_rotulo")}
               />
             </div>
           )}
@@ -191,16 +214,21 @@ export default async function ProjectPage({ params }: PageProps) {
           variant="fade"
           className="flex min-h-[60vh] flex-col justify-center bg-brand-greige/35 px-[7vw] py-[12vw]"
         >
-          <p className="text-[10px] uppercase tracking-[0.25em] text-brand-camel">
-            Percurso pelo projeto
-          </p>
-          <h2 className="my-5 max-w-[980px] font-serif text-[clamp(28px,4vw,52px)] leading-[0.92] tracking-[-0.03em]">
-            Ambiente a<br />ambiente.
-          </h2>
-          <p className="max-w-[460px] text-[13px] leading-[1.8] text-brand-sage">
-            A sequência acompanha o percurso natural pelo espaço, das áreas
-            comuns às mais reservadas.
-          </p>
+          {t("transicao_rotulo") && (
+            <p className="text-[10px] uppercase tracking-[0.25em] text-brand-camel">
+              {t("transicao_rotulo")}
+            </p>
+          )}
+          {t("transicao_titulo") && (
+            <h2 className="my-5 max-w-[980px] whitespace-pre-line font-serif text-[clamp(28px,4vw,52px)] leading-[0.92] tracking-[-0.03em]">
+              {t("transicao_titulo")}
+            </h2>
+          )}
+          {t("transicao_texto") && (
+            <p className="max-w-[460px] whitespace-pre-line text-[13px] leading-[1.8] text-brand-sage">
+              {t("transicao_texto")}
+            </p>
+          )}
         </FadeInSection>
       )}
 
@@ -259,7 +287,10 @@ export default async function ProjectPage({ params }: PageProps) {
                     ))}
                   </div>
 
-                  <SpecificationsAccordion items={envSpecs} />
+                  <SpecificationsAccordion
+                    items={envSpecs}
+                    label={t("materiais_ambiente_rotulo")}
+                  />
                 </div>
               </FadeInSection>
             );
@@ -276,19 +307,22 @@ export default async function ProjectPage({ params }: PageProps) {
           <FadeInSection variant="slide-left">
             <div className="mb-14 grid items-end gap-x-[7vw] md:grid-cols-2">
               <div>
-                <p className="text-[10px] uppercase tracking-[0.25em] text-brand-camel">
-                  Desenhos técnicos
-                </p>
-                <h2 className="mt-4 font-serif text-[clamp(23px,2.9vw,39px)] leading-[1.05] tracking-[-0.03em]">
-                  Os detalhes para
-                  <br />
-                  além do render.
-                </h2>
+                {t("tecnico_rotulo") && (
+                  <p className="text-[10px] uppercase tracking-[0.25em] text-brand-camel">
+                    {t("tecnico_rotulo")}
+                  </p>
+                )}
+                {t("tecnico_titulo") && (
+                  <h2 className="mt-4 whitespace-pre-line font-serif text-[clamp(23px,2.9vw,39px)] leading-[1.05] tracking-[-0.03em]">
+                    {t("tecnico_titulo")}
+                  </h2>
+                )}
               </div>
-              <p className="max-w-[480px] text-[13px] leading-[1.8] text-brand-sage md:self-end">
-                O desenvolvimento visual é acompanhado por desenho técnico de
-                layout, cortes, carpintarias e iluminação.
-              </p>
+              {t("tecnico_texto") && (
+                <p className="max-w-[480px] whitespace-pre-line text-[13px] leading-[1.8] text-brand-sage md:self-end">
+                  {t("tecnico_texto")}
+                </p>
+              )}
             </div>
           </FadeInSection>
 
@@ -368,13 +402,16 @@ export default async function ProjectPage({ params }: PageProps) {
           <FadeInSection variant="slide-right">
             <div className="mb-16 grid items-end gap-[7vw] md:grid-cols-2">
               <div>
-                <p className="text-[10px] uppercase tracking-[0.25em] text-brand-camel">
-                  Percurso
-                </p>
-                <h2 className="mt-4 font-serif text-[clamp(23px,2.9vw,39px)] leading-[1.05] tracking-[-0.03em]">
-                  O percurso até aqui
-                  <br />e o que se segue.
-                </h2>
+                {t("percurso_rotulo") && (
+                  <p className="text-[10px] uppercase tracking-[0.25em] text-brand-camel">
+                    {t("percurso_rotulo")}
+                  </p>
+                )}
+                {t("percurso_titulo") && (
+                  <h2 className="mt-4 whitespace-pre-line font-serif text-[clamp(23px,2.9vw,39px)] leading-[1.05] tracking-[-0.03em]">
+                    {t("percurso_titulo")}
+                  </h2>
+                )}
               </div>
             </div>
           </FadeInSection>

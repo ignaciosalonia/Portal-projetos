@@ -71,6 +71,7 @@ function mapProject(row: Record<string, unknown>): Project {
     publicAccessExpiresAt: (row.public_access_expires_at as string) ?? null,
     publicOpenedCount: (row.public_opened_count as number) ?? 0,
     publicLastOpenedAt: (row.public_last_opened_at as string) ?? null,
+    sectionTexts: (row.section_texts as Record<string, string>) ?? {},
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
   };

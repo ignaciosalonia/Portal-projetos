@@ -132,6 +132,7 @@ export async function getPublicProjectByToken(
     publicAccessExpiresAt: project.public_access_expires_at ?? null,
     publicOpenedCount: project.public_opened_count ?? 0,
     publicLastOpenedAt: project.public_last_opened_at ?? null,
+    sectionTexts: project.section_texts ?? {},
     createdAt: project.created_at,
     updatedAt: project.updated_at,
     stages: (stages ?? []).map(

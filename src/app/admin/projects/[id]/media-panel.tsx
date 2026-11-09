@@ -155,6 +155,52 @@ function slugifyFilename(name: string): string {
   return `${crypto.randomUUID()}-${base || "arquivo"}`;
 }
 
+/** Limite por arquivo do plano gratuito do Supabase. */
+const LIMITE_BYTES = 50 * 1024 * 1024;
+
+/**
+ * Reduz a imagem no navegador antes de enviar: lado maior limitado e JPEG de
+ * alta qualidade. Um render de 12 MB costuma virar menos de 1 MB sem
+ * diferença visível na tela — economiza armazenamento e deixa o site leve no
+ * celular. PDFs, SVG e GIF passam intactos. Se algo falhar (imagem gigante
+ * demais para a memória do aparelho, formato raro), envia o original.
+ */
+async function reduzirImagem(file: File, maxLado: number): Promise<File> {
+  if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) return file;
+  try {
+    const bitmap = await createImageBitmap(file);
+    const escala = Math.min(1, maxLado / Math.max(bitmap.width, bitmap.height));
+    if (escala === 1 && file.size < 1.5 * 1024 * 1024) {
+      bitmap.close();
+      return file;
+    }
+    const w = Math.round(bitmap.width * escala);
+    const h = Math.round(bitmap.height * escala);
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      bitmap.close();
+      return file;
+    }
+    // Fundo branco: PNG com transparência (plantas) não fica preto no JPEG.
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, w, h);
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(bitmap, 0, 0, w, h);
+    bitmap.close();
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, "image/jpeg", 0.86),
+    );
+    if (!blob || blob.size >= file.size) return file;
+    const nome = file.name.replace(/\.[^.]+$/, "") + ".jpg";
+    return new File([blob], nome, { type: "image/jpeg" });
+  } catch {
+    return file;
+  }
+}
+
 /**
  * Envio de arquivos direto do navegador para o Storage, sem passar pelo
  * servidor (que limita a 1 MB por requisição). Aceita vários arquivos de uma
@@ -192,21 +238,32 @@ function UploadForm({
     const supabase = createBrowserSupabase();
     const failed: string[] = [];
 
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      setProgress(
-        files.length > 1
-          ? `Enviando ${i + 1} de ${files.length}...`
-          : "Enviando...",
-      );
+    // Plantas e pranchas precisam de mais resolução para ler cotas e textos.
+    const maxLado = type === "floor_plan" || type === "document" ? 4000 : 2560;
 
+    for (let i = 0; i < files.length; i++) {
+      const original = files[i];
+      const contador = files.length > 1 ? ` ${i + 1} de ${files.length}` : "";
+
+      setProgress(`Otimizando${contador}...`);
+      const file = await reduzirImagem(original, maxLado);
+
+      if (file.size > LIMITE_BYTES) {
+        const mb = (file.size / 1024 / 1024).toFixed(0);
+        failed.push(
+          `${original.name}: tem ${mb} MB e o limite é 50 MB. Reduza o arquivo (no Acrobat: "Reduzir tamanho do arquivo") e envie de novo.`,
+        );
+        continue;
+      }
+
+      setProgress(`Enviando${contador}...`);
       const path = `${projectId}/${slugifyFilename(file.name)}`;
       const { error: upErr } = await supabase.storage
         .from(MEDIA_BUCKET)
         .upload(path, file, { contentType: file.type, upsert: false });
 
       if (upErr) {
-        failed.push(`${file.name}: ${upErr.message}`);
+        failed.push(`${original.name}: ${upErr.message}`);
         continue;
       }
 
@@ -215,11 +272,11 @@ function UploadForm({
         environmentId,
         type,
         path,
-        isPdf: file.type === "application/pdf",
+        isPdf: original.type === "application/pdf",
         code: code || undefined,
         title: title || undefined,
       });
-      if (result.error) failed.push(`${file.name}: ${result.error}`);
+      if (result.error) failed.push(`${original.name}: ${result.error}`);
     }
 
     setErrors(failed);
