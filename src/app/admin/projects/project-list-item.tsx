@@ -1,5 +1,7 @@
 "use client";
 
+import { linkDoCliente } from "@/lib/public-url";
+
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import type { Project } from "@/domain/types";
@@ -12,7 +14,7 @@ export function ProjectListItem({
   project: Project;
   orgSlug: string;
 }) {
-  const publicPath = `/p/${orgSlug}/${project.slug}/${project.publicToken}`;
+  const publicPath = linkDoCliente(orgSlug, project.slug, project.publicToken);
   const [isPending, startTransition] = useTransition();
   const [confirming, setConfirming] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -27,7 +29,7 @@ export function ProjectListItem({
     !expired;
 
   function handleCopy() {
-    const url = `${window.location.origin}${publicPath}`;
+    const url = publicPath;
     navigator.clipboard.writeText(url).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);

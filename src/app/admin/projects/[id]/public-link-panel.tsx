@@ -1,5 +1,7 @@
 "use client";
 
+import { linkDoCliente } from "@/lib/public-url";
+
 import { useState, useTransition } from "react";
 import type { Project } from "@/domain/types";
 import {
@@ -36,7 +38,7 @@ export function PublicLinkPanel({
   const [copied, setCopied] = useState(false);
   const [confirmingRegen, setConfirmingRegen] = useState(false);
 
-  const publicPath = `/p/${orgSlug}/${project.slug}/${project.publicToken}`;
+  const publicPath = linkDoCliente(orgSlug, project.slug, project.publicToken);
   const isPublished = project.published && project.publicVisibility;
   const expired =
     project.publicAccessExpiresAt !== null &&
@@ -45,7 +47,7 @@ export function PublicLinkPanel({
 
   function handleCopy() {
     navigator.clipboard
-      .writeText(`${window.location.origin}${publicPath}`)
+      .writeText(publicPath)
       .then(() => {
         setCopied(true);
         setTimeout(() => setCopied(false), 1500);
