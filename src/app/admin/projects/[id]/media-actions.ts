@@ -116,6 +116,8 @@ const registerMediaSchema = z.object({
   environmentId: z.string().uuid().optional(),
   type: uploadMediaSchema.shape.type,
   path: z.string().min(3),
+  /** Miniatura (1ª página) quando o arquivo é PDF. */
+  thumbPath: z.string().min(3).optional(),
   isPdf: z.boolean(),
   code: z.string().optional(),
   title: z.string().optional(),
@@ -140,7 +142,8 @@ export async function registerMediaAction(
     return { error: parsed.error.issues[0]?.message ?? "Dados inválidos." };
   }
   const d = parsed.data;
-  if (!d.path.startsWith(`${d.projectId}/`) || d.path.includes("..")) {
+  const naPasta = (p: string) => p.startsWith(`${d.projectId}/`) && !p.includes("..");
+  if (!naPasta(d.path) || (d.thumbPath && !naPasta(d.thumbPath))) {
     return { error: "Caminho de arquivo inválido." };
   }
 
@@ -148,17 +151,22 @@ export async function registerMediaAction(
   const { data: publicUrlData } = supabase.storage
     .from(MEDIA_BUCKET)
     .getPublicUrl(d.path);
+  const thumbUrl = d.thumbPath
+    ? supabase.storage.from(MEDIA_BUCKET).getPublicUrl(d.thumbPath).data.publicUrl
+    : null;
 
   const { count } = await supabase
     .from("media")
     .select("*", { count: "exact", head: true })
     .eq("project_id", d.projectId);
 
+  // PDF: `url` é a imagem exibida no card (miniatura, se houver) e
+  // `file_url` é o arquivo que abre/baixa.
   const { error } = await supabase.from("media").insert({
     project_id: d.projectId,
     environment_id: d.environmentId ?? null,
     type: d.type,
-    url: publicUrlData.publicUrl,
+    url: thumbUrl ?? publicUrlData.publicUrl,
     file_url: d.isPdf ? publicUrlData.publicUrl : null,
     code: d.code ?? null,
     title: d.title ?? null,
@@ -167,11 +175,46 @@ export async function registerMediaAction(
 
   if (error) {
     // Não deixa arquivo órfão no Storage se o registro falhar.
-    await supabase.storage.from(MEDIA_BUCKET).remove([d.path]);
+    await supabase.storage
+      .from(MEDIA_BUCKET)
+      .remove(d.thumbPath ? [d.path, d.thumbPath] : [d.path]);
     return { error: "Não foi possível salvar o registro do arquivo." };
   }
 
   revalidatePath(`/admin/projects/${d.projectId}`);
+  return { error: null };
+}
+
+/**
+ * Define a miniatura de um PDF que já estava cadastrado sem ela. O navegador
+ * gera a imagem e envia ao Storage; aqui só apontamos o card para ela.
+ */
+export async function setMediaThumbnailAction(input: {
+  mediaId: string;
+  projectId: string;
+  thumbPath: string;
+}): Promise<FormActionState> {
+  const ok =
+    z.string().uuid().safeParse(input.mediaId).success &&
+    z.string().uuid().safeParse(input.projectId).success &&
+    input.thumbPath.startsWith(`${input.projectId}/`) &&
+    !input.thumbPath.includes("..");
+  if (!ok) return { error: "Dados inválidos." };
+
+  const supabase = await createClient();
+  const { data } = supabase.storage.from(MEDIA_BUCKET).getPublicUrl(input.thumbPath);
+
+  const { error } = await supabase
+    .from("media")
+    .update({ url: data.publicUrl })
+    .eq("id", input.mediaId)
+    .eq("project_id", input.projectId);
+
+  if (error) {
+    await supabase.storage.from(MEDIA_BUCKET).remove([input.thumbPath]);
+    return { error: "Não foi possível salvar a miniatura." };
+  }
+  revalidatePath(`/admin/projects/${input.projectId}`);
   return { error: null };
 }
 

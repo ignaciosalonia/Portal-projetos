@@ -355,14 +355,43 @@ export default async function ProjectPage({ params }: PageProps) {
                       className="block no-underline"
                       aria-label={`Abrir ${label}`}
                     >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={m.url}
-                        alt={label}
-                        loading="lazy"
-                        decoding="async"
-                        className="h-[230px] w-full bg-brand-cream object-contain p-[16px]"
-                      />
+                      {/* PDF sem miniatura: a imagem do card ainda é o próprio
+                          PDF, que o navegador não desenha. Mostra um bloco
+                          neutro com o código e o tipo, no lugar do ícone
+                          quebrado. */}
+                      {m.fileUrl && m.url === m.fileUrl ? (
+                        <div className="flex h-[230px] w-full flex-col items-center justify-center gap-3 bg-brand-cream">
+                          <svg
+                            viewBox="0 0 40 48"
+                            className="h-12 w-10 text-brand-camel"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.2"
+                            aria-hidden="true"
+                          >
+                            <path d="M4 2h22l10 10v34H4z" />
+                            <path d="M26 2v10h10" />
+                            <path d="M10 22h20M10 28h20M10 34h13" />
+                          </svg>
+                          {m.code && (
+                            <span className="font-serif text-[22px] tracking-[0.04em] text-brand-charcoal">
+                              {m.code}
+                            </span>
+                          )}
+                          <span className="text-[9px] uppercase tracking-[0.25em] text-brand-sage">
+                            Documento em PDF
+                          </span>
+                        </div>
+                      ) : (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={m.url}
+                          alt={label}
+                          loading="lazy"
+                          decoding="async"
+                          className="h-[230px] w-full bg-brand-cream object-contain p-[16px]"
+                        />
+                      )}
                     </a>
 
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 bg-brand-greige/40 px-5 py-[16px]">

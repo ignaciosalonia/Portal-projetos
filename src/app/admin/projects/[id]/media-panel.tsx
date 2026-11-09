@@ -3,10 +3,12 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createClient as createBrowserSupabase } from "@/lib/supabase/client";
+import { gerarMiniaturaPdf } from "@/lib/pdf-thumbnail";
 import type { Environment, Media, MediaType } from "@/domain/types";
 import {
   deleteMediaAction,
   registerMediaAction,
+  setMediaThumbnailAction,
   setHeroImageAction,
 } from "./media-actions";
 
@@ -267,12 +269,29 @@ function UploadForm({
         continue;
       }
 
+      // PDF: desenha a 1ª página e sobe como capa do card. Se não der,
+      // segue sem miniatura (o site mostra um bloco com código e título).
+      const isPdf = original.type === "application/pdf";
+      let thumbPath: string | undefined;
+      if (isPdf) {
+        setProgress(`Gerando miniatura${contador}...`);
+        const thumb = await gerarMiniaturaPdf(file);
+        if (thumb) {
+          const tp = path.replace(/\.pdf$/i, "") + "-capa.jpg";
+          const { error: thumbErr } = await supabase.storage
+            .from(MEDIA_BUCKET)
+            .upload(tp, thumb, { contentType: "image/jpeg", upsert: false });
+          if (!thumbErr) thumbPath = tp;
+        }
+      }
+
       const result = await registerMediaAction({
         projectId,
         environmentId,
         type,
         path,
-        isPdf: original.type === "application/pdf",
+        thumbPath,
+        isPdf,
         code: code || undefined,
         title: title || undefined,
       });
@@ -368,6 +387,11 @@ function UploadForm({
   );
 }
 
+/** PDF sem miniatura: a imagem do card ainda aponta para o próprio PDF. */
+function semMiniatura(item: Media): boolean {
+  return Boolean(item.fileUrl) && item.url === item.fileUrl;
+}
+
 function MediaGrid({
   items,
   projectId,
@@ -377,7 +401,35 @@ function MediaGrid({
   projectId: string;
   heroImage: string | null;
 }) {
+  const router = useRouter();
   const [, startTransition] = useTransition();
+  const [gerando, setGerando] = useState<string | null>(null);
+  const [falhou, setFalhou] = useState<string[]>([]);
+
+  async function gerarMiniatura(item: Media) {
+    if (!item.fileUrl) return;
+    setGerando(item.id);
+    const thumb = await gerarMiniaturaPdf(item.fileUrl);
+    let ok = false;
+    if (thumb) {
+      const supabase = createBrowserSupabase();
+      const tp = `${projectId}/${crypto.randomUUID()}-capa.jpg`;
+      const { error } = await supabase.storage
+        .from(MEDIA_BUCKET)
+        .upload(tp, thumb, { contentType: "image/jpeg", upsert: false });
+      if (!error) {
+        const result = await setMediaThumbnailAction({
+          mediaId: item.id,
+          projectId,
+          thumbPath: tp,
+        });
+        ok = !result.error;
+      }
+    }
+    if (!ok) setFalhou((f) => [...f, item.id]);
+    setGerando(null);
+    router.refresh();
+  }
 
   if (items.length === 0) {
     return <p className="text-sm text-neutral-500">Nenhum arquivo ainda.</p>;
@@ -387,9 +439,10 @@ function MediaGrid({
     <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
       {items.map((item) => {
         const isPdf = Boolean(item.fileUrl);
+        const precisaMiniatura = semMiniatura(item);
         return (
           <div key={item.id} className="space-y-1">
-            {isPdf ? (
+            {precisaMiniatura ? (
               <a
                 href={item.fileUrl ?? item.url}
                 target="_blank"
@@ -399,17 +452,34 @@ function MediaGrid({
                 PDF ↗
               </a>
             ) : (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={item.url}
-                alt={item.title ?? item.type}
-                className="aspect-square w-full rounded object-cover"
-              />
+              <div className="relative">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={item.url}
+                  alt={item.title ?? item.type}
+                  className="aspect-square w-full rounded object-cover"
+                />
+                {isPdf && (
+                  <span className="absolute left-1 top-1 rounded bg-white/90 px-1.5 py-0.5 text-[10px] text-neutral-700">
+                    PDF
+                  </span>
+                )}
+              </div>
             )}
             <p className="truncate text-xs text-neutral-500">
               {[item.code, item.title].filter(Boolean).join(" · ") || item.type}
             </p>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-x-2">
+              {precisaMiniatura && (
+                <button
+                  type="button"
+                  onClick={() => gerarMiniatura(item)}
+                  disabled={gerando !== null}
+                  className="text-xs text-neutral-700 underline disabled:text-neutral-400"
+                >
+                  {gerando === item.id ? "gerando..." : "gerar miniatura"}
+                </button>
+              )}
               {!isPdf && (
                 <button
                   type="button"
@@ -434,6 +504,11 @@ function MediaGrid({
                 remover
               </button>
             </div>
+            {falhou.includes(item.id) && (
+              <p className="text-[11px] text-red-600">
+                Não foi possível gerar. O site mostra o código e o título no lugar.
+              </p>
+            )}
           </div>
         );
       })}
